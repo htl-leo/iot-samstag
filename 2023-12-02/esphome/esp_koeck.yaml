@@ -1,5 +1,5 @@
 esphome:
-  name: esp18
+  name: espkoeck
 
 esp32:
   board: esp32dev
@@ -23,7 +23,7 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "esp18 Fallback Hotspot"
+    ssid: "espkoeck Fallback Hotspot"
     password: "CcQpyx5dWMJy"
 
 captive_portal:
@@ -37,27 +37,27 @@ captive_portal:
 web_server:
   port: 80
 
-mqtt:
-  broker: !secret mqtt_broker
-  username: !secret mqtt_user
-  password: !secret mqtt_password
+# mqtt:
+#   broker: !secret mqtt_broker
+#   username: !secret mqtt_user
+#   password: !secret mqtt_password
 
 binary_sensor:
   - platform: gpio
     pin: 25
-    name: "esp18 motion"
+    name: "espkoeck motion"
     device_class: motion
 sensor:
   - platform: dht
     model: DHT22
     pin: 27
     temperature:
-      name: "esp18 temperature"
+      name: "espkoeck temperature"
     humidity:
-      name: "esp18 humidity"
+      name: "espkoeck humidity"
     update_interval: 10s
 
 light:
   - platform: status_led
-    name: "esp18 led"
+    name: "espkoeck led"
     pin: GPIO2 
