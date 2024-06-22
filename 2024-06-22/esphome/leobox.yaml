@@ -1,0 +1,63 @@
+esphome:
+  name: leobox_mustermann
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "01T6rbg6kRjpusDhj2opiK2Rr9jksMd7ikNJ7IwsSeE="
+
+ota:
+  password: "fb03e5760aa71932dc8e6cda63ed884d"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "rgbled Fallback Mustermann"
+    password: "CcQpyx5dWMJy"
+
+captive_portal:
+
+web_server:
+  port: 80
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+
+
+# Example configuration entry
+light:
+  - platform: rgb
+    name: "Lights Mustermann"
+    red: r
+    green: g
+    blue: b
+
+output:
+  - platform: ledc
+    pin: GPIO17
+    id: g
+  - platform: ledc
+    pin: GPIO18
+    id: r
+  - platform: ledc
+    pin: GPIO19
+    id: b
+
+sensor:
+  - platform: adc
+    pin: GPIO35
+    name: "Brightness"
+    update_interval: 2s
