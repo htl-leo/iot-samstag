@@ -51,3 +51,9 @@ output:
   - platform: ledc
     pin: GPIO19
     id: b
+
+sensor:
+  - platform: adc
+    pin: GPIO35
+    name: ${name}-Illuminance
+    update_interval: 1s
