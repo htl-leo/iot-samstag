@@ -1,0 +1,87 @@
+substitutions:
+  name: "esp32s3"
+
+esphome:
+  name: ${name}
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+
+# Enable logging
+logger:
+
+
+# Enable Home Assistant API
+# api:
+#   encryption:
+#     key: "BntVVPNZbPNC5UzN9oL4XDDXj6xtatU7aVjumB4EJwY="
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: substitutions.name
+    password: "MoLTqZUvHwWI"
+
+web_server:
+  port: 80
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+
+i2c:
+  sda: 10
+  scl: 11
+  # scan: true
+  id: bus_a
+
+sensor:
+  - platform: tsl2591
+    name: "Tsl 2591"
+    id: "my_tls2591"
+    address: 0x29
+    update_interval: 10s
+    gain: auto
+    device_factor: 53
+    glass_attenuation_factor: 14.4
+    visible:
+      name: ${name}_TSL2591_visible_light
+    infrared:
+      name: ${name}_TSL2591_infrared_light
+    full_spectrum:
+      name: ${name}_TSL2591_full_spectrum_light
+    calculated_lux:
+      id: i_lux
+      name: ${name}_TSL2591_Lux
+    actual_gain:
+      id: "actual_gain"
+      name: ${name}_TSL2591_actual_gain
+      unit_of_measurement: lx
+
+  - platform: wifi_signal
+    name: ${name}_WiFi_Signal
+    update_interval: 60s      
+
+# esp32_ble_tracker:
+#   scan_parameters:
+#     # We currently use the defaults to ensure Bluetooth
+#     # can co-exist with WiFi In the future we may be able to
+#     # enable the built-in coexistence logic in ESP-IDF
+#     active: true
+
+# bluetooth_proxy:
+#   active: true
+
+button:
+  - platform: factory_reset
+    id: factory_reset_btn
+    name: Factory reset
