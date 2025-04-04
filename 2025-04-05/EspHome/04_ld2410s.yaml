@@ -1,0 +1,120 @@
+substitutions:
+  name: "s3_ld2410s"
+  
+esphome:
+  name: ${name}
+  # platform: esp32
+  # board: esp32-s3-devkitc-1
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/MrUndead1996/ld2410s-esphome
+    components: [ld2410s]
+
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: arduino
+    # type: esp-idf
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  
+  ap:
+    ssid: substitutions.name
+    password: "12345678"
+
+captive_portal:
+
+logger:
+  level: DEBUG
+  logs:
+    sensor: INFO
+
+ota:
+  password: "585353d758e3f126d2f4982f0695d956"
+  platform: esphome
+
+web_server:
+  port: 80
+
+# api:
+#   encryption:
+#     key: "18T6rbg6kRjpusDhj2opiK2Rr9jksMd7ikNJ7IwsSeE="
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+
+uart:
+  id: uart_bus
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 115200
+  parity: NONE
+  stop_bits: 1
+  # debug:
+  #  direction: BOTH
+  #  dummy_receiver: false
+  #  after:
+  #    delimiter: "\n"
+  #  sequence:
+  #    - lambda: UARTDebug::log_hex(direction, bytes, ':');
+
+ld2410s:
+  uart_id: uart_bus
+
+binary_sensor:
+  - platform: ld2410s
+    has_target:
+      name: Presence
+    has_threshold_update:
+      name: Threshold update running
+
+sensor:
+  - platform: ld2410s
+    target_distance:
+      name : Target Distance
+    threshold_update: 
+      name: Threshold update progress
+
+number:
+  - platform: ld2410s
+    max_distance:
+      name: Max detect distance
+    min_distance:
+      name: Min detect distance
+    no_delay:
+      name: No detect report delay
+    status_reporting_frequency:
+      name: Status reporting frequency
+    distance_reporting_frequency:
+      name: Distance reporting frequency
+
+button:
+  - platform: ld2410s
+    enable_config:
+      name: Enable config mode
+    disable_config:
+      name: Disable config mode
+    apply_config:
+      name: Apply config changes
+    auto_threshold:
+      name: Start auto threshold update
+
+select:
+  - platform: ld2410s
+    response_speed:
+      name: Response speed
+
+text_sensor:
+  - platform: ld2410s
+    fw_version:
+      name: Firmware version

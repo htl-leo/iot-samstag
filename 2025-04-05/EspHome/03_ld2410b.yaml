@@ -1,0 +1,175 @@
+uart:
+  id: ld2410_uart
+  tx_pin: GPIO17  # gelb
+  rx_pin: GPIO16  # grün
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+
+ld2410:
+  uart_id: ld2410_uart
+
+binary_sensor:
+  - platform: ld2410
+    has_target:
+      name: ${name}_presence
+    has_moving_target:
+      name: ${name}_moving_target
+    has_still_target:
+      name: Still Target
+    out_pin_presence_status:
+      name: out pin presence status
+  - platform: gpio
+    pin: GPIO04
+    name: ${name}_out_pin_presence
+    device_class: presence
+
+sensor:
+  - platform: ld2410
+    light:
+      name: ${name}_light
+    moving_distance:
+      name : ${name}_moving_distance
+    still_distance:
+      name: ${name}_still_distance
+    moving_energy:
+      name: ${name}_move_energy
+    still_energy:
+      name: ${name}_still_energy
+    detection_distance:
+      name: ${name}_detection_distance
+    g0:
+      move_energy:
+        name: ${name}_g0_move_energy
+      still_energy:
+        name: ${name}_g0_still_energy
+    g1:
+      move_energy:
+        name: ${name}_g1_move_energy
+      still_energy:
+        name: ${name}_g1_still_energy
+    g2:
+      move_energy:
+        name: ${name}_g2_move_energy
+      still_energy:
+        name: ${name}_g2_still_energy
+    g3:
+      move_energy:
+        name: ${name}_g3_move_energy
+      still_energy:
+        name: ${name}_g3_still_energy
+    g4:
+      move_energy:
+        name: ${name}_g4_move_energy
+      still_energy:
+        name: ${name}_g4_still_energy
+    g5:
+      move_energy:
+        name: ${name}_g5_move_energy
+      still_energy:
+        name: ${name}_g5_still_energy
+    g6:
+      move_energy:
+        name: ${name}_g6_move_energy
+      still_energy:
+        name: ${name}_g6_still_energy
+    g7:
+      move_energy:
+        name: ${name}_g7_move_energy
+      still_energy:
+        name: ${name}_g7_still_energy
+    g8:
+      move_energy:
+        name: ${name}_g8_move_energy
+      still_energy:
+        name: ${name}_g8_still_energy
+
+switch:
+  - platform: ld2410
+    engineering_mode:
+      name: ${name}_engineering_mode
+    bluetooth:
+      name: ${name}_control_bluetooth
+
+number:
+  - platform: ld2410
+    timeout:
+      name: ${name}_timeout
+    light_threshold:
+      name: ${name}_light_threshold
+    max_move_distance_gate:
+      name: ${name}_max_move_distance_gate
+    max_still_distance_gate:
+      name: ${name}_max_still_distance_gate
+    g0:
+      move_threshold:
+        name: ${name}_g0_move_threshold
+      still_threshold:
+        name: ${name}_g0_still_threshold
+    g1:
+      move_threshold:
+        name: ${name}_g1_move_threshold
+      still_threshold:
+        name: ${name}_g1_still_threshold
+    g2:
+      move_threshold:
+        name: ${name}_g2_move_threshold
+      still_threshold:
+        name: ${name}_g2_still_threshold
+    g3:
+      move_threshold:
+        name: ${name}_g3_move_threshold
+      still_threshold:
+        name: ${name}_g3_still_threshold
+    g4:
+      move_threshold:
+        name: ${name}_g4_move_threshold
+      still_threshold:
+        name: ${name}_g4_still_threshold
+    g5:
+      move_threshold:
+        name: ${name}_g5_move_threshold
+      still_threshold:
+        name: ${name}_g5_still_threshold
+    g6:
+      move_threshold:
+        name: ${name}_g6_move_threshold
+      still_threshold:
+        name: ${name}_g6_still_threshold
+    g7:
+      move_threshold:
+        name: ${name}_g7_move_threshold
+      still_threshold:
+        name: ${name}_g7_still_threshold
+    g8:
+      move_threshold:
+        name: ${name}_g8_move_threshold
+      still_threshold:
+        name: ${name}_g8_still_threshold
+
+button:
+  - platform: ld2410
+    factory_reset:
+      name: ${name}_factory_reset
+    restart:
+      name: ${name}_restart
+    query_params:
+      name: ${name}_query_params
+
+text_sensor:
+  - platform: ld2410
+    version:
+      name: ${name}_firmware_version
+    mac_address:
+      name: ${name}_mac_address
+
+select:
+  - platform: ld2410
+    distance_resolution:
+      name: ${name}_distance_resolution
+    baud_rate:
+      name: ${name}_baud_rate
+    light_function:
+      name: ${name}_light_function
+    out_pin_level:
+      name: ${name}_out_pin_level

@@ -1,0 +1,7 @@
+mqtt_broker: "192.168.2.3"
+mqtt_port: 1883
+mqtt_user: "leo"
+mqtt_password: "passme"
+
+wifi_ssid: "iot"
+wifi_password: "smarthome"

@@ -1,0 +1,19 @@
+output:
+  - platform: ledc
+    pin: GPIO12
+    id: r
+  - platform: ledc
+    pin: GPIO14
+    id: g
+  - platform: ledc
+    pin: GPIO27
+    id: b
+
+light:
+  - platform: rgb
+    name: "RGB Lights"
+    id: rgblights
+    red: r
+    green: g
+    blue: b
+
