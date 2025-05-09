@@ -1,0 +1,41 @@
+esphome:
+  name: esp32cam
+
+esp32:
+  board: esp32cam
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# Enable logging
+logger:
+  level: VERBOSE
+  
+api:
+  encryption:
+    key: "r0wTqPniZfNNzywDY281SzC8eu545f/6DXR4Ukm05uY="
+
+ota:
+  password: "1306b3ba4bd96db83ba7f7a145ca13af"
+  platform: esphome
+
+esp32_camera:
+  name: ESP32-Kamera
+  external_clock:
+    pin: GPIO0
+    frequency: 20MHz
+  i2c_pins:
+    sda: GPIO26
+    scl: GPIO27
+  data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+  vsync_pin: GPIO25
+  href_pin: GPIO23
+  pixel_clock_pin: GPIO22
+  power_down_pin: GPIO32
+  resolution: 640x480
+  jpeg_quality: 10
+
+# Optional: Webserver für Kamera
+web_server:
+  port: 80
