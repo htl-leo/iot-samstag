@@ -1,0 +1,201 @@
+substitutions:
+  name: "s3_mini_sensorbox"
+  
+esphome:
+  name: ${name}
+  # platform: esp32
+  # board: esp32-s3-devkitc-1
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: arduino
+    # type: esp-idf
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  
+  ap:
+    ssid: substitutions.name
+    password: "12345678"
+
+captive_portal:
+
+logger:
+
+ota:
+  password: "585353d758e3f126d2f4982f0695d956"
+  platform: esphome
+
+web_server:
+  port: 80
+
+api:
+  encryption:
+    key: "18T6rbg6kRjpusDhj2opiK2Rr9jksMd7ikNJ7IwsSeE="
+
+# mqtt:
+#   broker: !secret mqtt_broker
+#   username: !secret mqtt_user
+#   password: !secret mqtt_password
+
+i2c:
+  sda: GPIO08  # Anpassen je nach Board
+  scl: GPIO09  # Anpassen je nach Board
+  scan: true
+  id: bus_a
+
+uart:
+  rx_pin: GPIO07
+  tx_pin: GPIO06
+  baud_rate: 115200
+
+ld2420:
+
+text_sensor:
+  - platform: ld2420
+    fw_version:
+      name: ${name}_LD2420_Firmware
+
+sensor:
+  - platform: ld2420
+    moving_distance:
+      name: ${name}_Moving_Distance
+      id: ld2420_distance
+
+  - platform: wifi_signal
+    name: ${name}_WiFi_Signal
+    update_interval: 5s      
+
+  - platform: scd4x
+    co2:
+      name: ${name}_scd41_CO2
+      id: co2
+    temperature:
+      name: ${name}_scd41_Temperature
+      id: scd41_temperature
+    humidity:
+      name: ${name}_scd41_Humidity
+      id: scd41_humidity
+
+  - platform: bme280_i2c
+    i2c_id: bus_a
+    address: 0x76
+    update_interval: 5s
+    temperature:
+      name: ${name}_bme280_Temperature
+      id: temperature
+      oversampling: 16x
+      accuracy_decimals: 1
+      filters:
+        - lambda: return x;
+    pressure:
+      name: ${name}_bme280_Pressure
+      id: pressure
+    humidity:
+      name: ${name}_bme280_Humidity
+      id: humidity
+
+  - platform: tsl2591
+    name: "Tsl 2591"
+    id: "my_tls2591"
+    address: 0x29
+    update_interval: 5s
+    gain: auto
+    device_factor: 53
+    glass_attenuation_factor: 14.4
+    visible:
+      name: ${name}_TSL2591_visible_light
+    infrared:
+      name: ${name}_TSL2591_infrared_light
+    full_spectrum:
+      name: ${name}_TSL2591_full_spectrum_light
+    calculated_lux:
+      id: i_lux
+      name: ${name}_TSL2591_Lux
+    actual_gain:
+      id: "actual_gain"
+      name: ${name}_TSL2591_actual_gain
+      unit_of_measurement: lx
+
+binary_sensor:
+  - platform: ld2420
+    has_target:
+      name: ${name}_Presence
+
+select:
+  - platform: ld2420
+    operating_mode:
+      name: ${name}_Operating_Mode
+
+number:
+  - platform: ld2420
+    presence_timeout:
+      name: ${name}_Detection_Presence_Timeout
+    min_gate_distance:
+      name: ${name}_Detection_Gate_Minimum
+    max_gate_distance:
+      name: ${name}_Detection_Gate_Maximum
+    # See "Number" section below for detail
+    gate_select:
+      name: ${name}_Select_Gate_to_Set
+    still_threshold:
+      name: ${name}_Set_Still_Threshold_Value
+    move_threshold:
+      name: ${name}_Set_Move_Threshold_Value
+
+button:
+  - platform: ld2420
+    apply_config:
+      name: ${name}_Apply_Config
+    factory_reset:
+      name: ${name}_Factory_Reset
+    restart_module:
+      name: ${name}_Restart_Module
+    revert_config:
+      name: ${name}_Undo_Edits
+
+font:
+  - file: "fonts/Arial.ttf"
+    id: font1
+    size: 14
+  - file: "fonts/Arial.ttf"
+    id: font2
+    size: 10
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    lambda: |-
+      it.printf(0, 0, id(font2), "Temp: %.1f°", id(temperature).state);
+      it.printf(68, 0, id(font2), "Hum: %d%%", (int)id(humidity).state);
+      it.printf(0, 11, id(font2), "Co2: %d", (int)id(co2).state);
+      it.printf(62, 11, id(font2), "%.1f°", id(scd41_temperature).state);
+      it.printf(94, 11, id(font2), "%d%%", (int)id(scd41_humidity).state);
+      it.printf(0, 22, id(font2), "%dlx", (int)id(i_lux).state);
+      it.printf(68, 22, id(font2), "%dcm", (int)id(ld2420_distance).state);
+
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2812
+    pin: GPIO10
+    num_leds: 1
+    name: ${name}_NeoPixel
+    id: neopixel
+
+output:
+  - platform: gpio
+    pin: GPIO11
+    id: buzzer_output
+
+switch:
+  - platform: output
+    name: ${name}_Buzzer
+    output: buzzer_output
+    id: buzzer_switch

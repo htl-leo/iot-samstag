@@ -1,0 +1,347 @@
+substitutions:
+  name: "nili3"
+
+esphome:
+  name: ${name}
+  # platform: ESP32
+  # board: featheresp32
+  # platformio_options:
+  #   board_upload.flash_size: 16MB
+  #   board_build.partitions: "../../../custom_partitions.csv"
+
+# esp32:
+#   board: esp32dev
+#   framework:
+#     type: esp-idf
+#     version: recommended
+#     # Custom sdkconfig options
+#     sdkconfig_options:
+#       COMPILER_OPTIMIZATION_SIZE: y
+#     # Advanced tweaking options
+#     advanced:
+#       ignore_efuse_mac_crc: false
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+
+
+logger:
+
+# api:
+#   encryption:
+#     key: "BntVVPNZbPNC5UzN9oL4XDDXj6xtatU7aVjumB4EJwY="
+
+ota:
+  password: "585353d758e3f126d2f4982f0695d956"
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: substitutions.name
+    password: "g0MuFWdXxO2k"
+
+web_server:
+  port: 80
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+
+captive_portal:
+
+# esp32_ble_tracker:
+# bluetooth_proxy:
+#   active: true
+
+button:
+  - platform: factory_reset
+    id: factory_reset_btn
+    name: Factory reset
+
+
+i2c:
+  sda: 21
+  scl: 22
+  # scan: true
+  id: bus_a
+
+uart:
+  rx_pin: GPIO13
+  tx_pin: GPIO12
+  baud_rate: 9600
+
+sensor:
+  - platform: wifi_signal
+    name: ${name}_WiFi_Signal
+    update_interval: 60s      
+
+  - platform: mqtt_subscribe
+    name: "CO2 Threshold High"
+    id: mqtt_topic_high
+    topic: co2/threshold/high
+    on_value:
+        then:
+          - logger.log:
+              format: "CO2 Threshold High value %.1f"
+              args: [ 'id(mqtt_topic_high).state' ]     
+          - lambda: |-
+              id(mqtt_threshold_high) = id(mqtt_topic_high).state;
+              ESP_LOGD("mqtt_threshold_high", "Neuer CO2-Schwellwert fuer HIGH gesetzt: %.2f", id(mqtt_threshold_high));              
+
+  - platform: mqtt_subscribe
+    name: "CO2 Threshold Middle"
+    id: mqtt_topic_middle
+    topic: co2/threshold/middle
+    on_value:
+        then:
+          - logger.log:
+              format: "CO2 Threshold Middle value %.1f"
+              args: [ 'id(mqtt_topic_middle).state' ]     
+          - lambda: |-
+              id(mqtt_threshold_middle) = id(mqtt_topic_middle).state;
+              ESP_LOGD("mqtt_threshold_middle", "Neuer CO2-Schwellwert fuer MIDDLE gesetzt: %.2f", id(mqtt_threshold_middle));              
+
+
+  - platform: bme280_i2c
+    i2c_id: bus_a
+    address: 0x76
+    update_interval: 10s
+    temperature:
+      name: ${name}_Temperature
+      id: temperature
+      oversampling: 16x
+      accuracy_decimals: 1
+      filters:
+        - lambda: return x-6;
+    pressure:
+      name: ${name}_Pressure
+      id: pressure
+    humidity:
+      name: ${name}_Humidity
+      id: humidity
+
+  - platform: adc
+    pin: GPIO32
+    name: ${name}_Illuminance
+    id: illuminance
+    # unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 10s
+    filters: 
+      - lambda: return std::max(std::min( x * 100.0, 100.0), 0.0);
+    on_value:
+      then:
+        - logger.log:
+            format: "_Illuminance changed, value %.1f"
+            args: [ 'id(illuminance).state' ]
+        - lambda: |-
+            float brightness_local = (id(illuminance).state) / 100.0f;
+            if (brightness_local < 0.2f) {
+              brightness_local = 0.2f;
+            }
+            id(brightness_neopixel) = brightness_local;
+            ESP_LOGD("brightness neopixel", "Helligkeit der Neopixel gesetzt: %.1f", id(brightness_neopixel));              
+
+  - platform: mhz19
+    co2:
+      name: ${name}_CO2
+      id: co2
+
+      on_value:
+        then:
+          - logger.log:
+              format: "MHZ19 reports co2 value %.1f"
+              args: [ 'id(co2).state' ]     
+
+          - if:
+              condition:
+                lambda: |-
+                  return (id(co2).state < id(mqtt_threshold_middle));
+              then:
+                - logger.log: "CO2-Wert ist im niedrigen Bereich"
+                - light.turn_on:
+                    id: neopixel
+                    brightness: !lambda return id(brightness_neopixel);
+                      # lambda: |-   # Komplexe Lambda-Functions sind bei brightness nicht erlaubt
+                        # return 0.2;
+                        # float brightness_local = (id(illuminance).state) / 100.0f;
+                        # if (brightness_local < 0.2f) {
+                        #   brightness_local = 0.2f;
+                        # }
+                        # ESP_LOGD("low co2", "Neuer Helligkeitswert fuer LOW gesetzt: %.2f", brightness_local);              
+                        # return brightness_local;
+                    red: 0%
+                    green: 100%
+                    blue: 0%    
+          - if:
+              condition:
+                lambda: |-
+                  return ( (id(co2).state > id(mqtt_threshold_middle))  && (id(co2).state < id(mqtt_threshold_high)) );
+              then:
+                - logger.log: "CO2-Wert ist im mittleren Bereich"
+                - light.turn_on:
+                    id: neopixel
+                    brightness: !lambda return id(brightness_neopixel);
+                    red: 0%
+                    green: 0%
+                    blue: 100%    
+          - if:
+              condition:
+                lambda: |-
+                  return  (id(co2).state > id(mqtt_threshold_high));
+              then:
+                - logger.log: "CO2-Wert ist im hohen Bereich"
+                - light.turn_on:
+                    id: neopixel
+                    brightness: 100%
+                    red: 100%
+                    green: 0%
+                    blue: 0%    
+
+
+# Variante 2 mit sensor.in_range funktioniert nicht mit variablen range-werten
+          # - if:
+          #     condition:
+          #       sensor.in_range:
+          #         id: co2
+          #         below: 600
+          #     then:
+          #       - light.turn_on:
+          #           id: neopixel
+          #           brightness: !lambda return ((id(illuminance).state) / 200.0f);
+          #           red: 0%
+          #           green: 100%
+          #           blue: 0%    
+          # - if:
+          #     condition:
+          #       sensor.in_range:
+          #         id: co2
+          #         above: !lambda 'return id(mqtt_topic_middle).state;'
+          #         below: !lambda 'return id(mqtt_topic_high).state;'
+          #     then:
+          #       - light.turn_on:
+          #           id: neopixel
+          #           brightness: !lambda return ((id(illuminance).state) / 200.0f);
+          #           red: 0%
+          #           green: 0%
+          #           blue: 100%    
+          # - if:
+          #     condition:
+          #       sensor.in_range:
+          #         id: co2
+          #         above: !lambda return id(mqtt_topic_high).state;
+          #     then:
+          #       - light.turn_on:
+          #           id: neopixel
+          #           brightness: 100%
+          #           red: 100%
+          #           green: 0%
+          #           blue: 0%    
+
+      # Wird nur aufgerufen, wenn sich der range ändert, nicht wenn sich der value ändert
+      # daher werden helligkeitsanpassungen nicht rechtzeitig durchgeführt
+      # on_value_range:
+      #   - below: 600
+      #     then:
+      #       - logger.log: "MHZ19 below 600"
+      #       - light.turn_on:
+      #           id: neopixel
+      #           brightness: !lambda return ((id(illuminance).state) / 200.0f);
+      #           red: 0%
+      #           green: 100%
+      #           blue: 0%    
+      #   - above: 600
+      #     below: 1000
+      #     then:
+      #       - logger.log: "MHZ19 600 - 1000"
+      #       - light.turn_on:
+      #           id: neopixel
+      #           brightness: !lambda return ((id(illuminance).state) / 200.0f);
+      #           red: 0%
+      #           green: 0%
+      #           blue: 100%    
+      #   - above: 1000
+      #     then:
+      #       - logger.log: "MHZ19 above 1000"
+      #       - light.turn_on:
+      #           id: neopixel
+      #           brightness: !lambda return ((id(illuminance).state) / 100.0f);
+      #           red: 100%
+      #           green: 0%
+      #           blue: 0%    
+
+    temperature:
+      name: ${name}_MH-Z19 Temperature
+      id: mhz19temperature
+    update_interval: 10s
+    automatic_baseline_calibration: false    
+
+binary_sensor:
+  - platform: gpio
+    pin: 25
+    name: ${name}_Motion
+    id: motion
+    device_class: motion
+
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2812
+    pin: GPIO27
+    num_leds: 1
+    name: ${name}_NeoPixel
+    id: neopixel
+    on_turn_on:
+      then:
+          - logger.log:
+              format: "Neopixel brightness value %.2f"
+              args: [ 'id(neopixel).current_values.get_brightness()' ]        
+
+    # on_turn_on:
+    #   then:
+    #     - light.turn_on:
+    #         id: neopixel
+    #         brightness: 30%
+    #         red: 100%
+    #         green: 0%
+    #         blue: 0.0 
+
+globals:
+  - id: mqtt_threshold_middle
+    type: float
+    initial_value: 600.0f
+
+  - id: mqtt_threshold_high
+    type: float
+    initial_value: 1200.0f
+
+  - id: brightness_neopixel
+    type: float
+    restore_value: no
+    initial_value: '0.3'    
+
+# text_sensor:
+#   - platform: mqtt_subscribe
+#     name: "CO2 Threshold High"
+#     id: mqtt_topic_high
+#     topic: "co2/threshold/high"
+
+#   - platform: mqtt_subscribe
+#     name: "CO2 Threshold Middle"
+#     id: mqtt_topic_middle
+#     topic: "co2/threshold/middle"
+
+interval:
+  - interval: 10s
+    then:
+      - lambda: |-
+          ESP_LOGD("mqtt", "MQTT-Wert mqtt_threshold_high aktualisiert: %.2f", id(mqtt_threshold_high));
+          ESP_LOGD("mqtt", "MQTT-Wert mqtt_threshold_middle aktualisiert: %.2f", id(mqtt_threshold_middle));
+          ESP_LOGD("mqtt", "MQTT-Wert mqtt_topic_high %.f", id(mqtt_topic_high).state );
+          ESP_LOGD("mqtt", "MQTT-Wert mqtt_topic_middle %.f", id(mqtt_topic_middle).state );
