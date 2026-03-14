@@ -1,0 +1,13 @@
+:toc:
+
+= Documentation 
+geschrieben von Paul Nell, Niklas Trinkl und Jonas Pamminger
+
+== Das Problem 
+Das Problem war, dass wenn 2 oder mehr Homeassistants im selben Netzwerk laufen, senden diese sehr viele Broadcasts. Dies lies bei 17 Homeassistands das Netzwerk zusammenbrechen.
+
+== Die Recherche 
+Die Recherche stellte sich als sehr schwierig heraus, da es wenige Uses Cases gibt, in denen so viele Homeassistants im selben Netzwerk laufen.
+
+== Die Lösung 
+Schlussendlich haben wir aber doch eine Lösung gefunden. Mit dem Keyword *zeroconf:* in der configuration.yaml werden die Broadcasts auf ein Minimum reduziert. Es wird beispielsweise auto find disabled, was einen grossen Teil der Broadcasts ausmacht.
